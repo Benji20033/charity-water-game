@@ -1,8 +1,12 @@
 const TOTAL_COLUMNS = 4;
 const MAX_LIVES = 3;
 const SPAWN_INTERVAL = 1100;
+const SPAWN_INTERVAL_MIN = 500;
+const DIFFICULTY_STEP_POINTS = 60;
 const TRASH_SPEED_MIN = 1.6;
 const TRASH_SPEED_MAX = 2.4;
+const TRASH_SPEED_MIN_MAX = 2.3;
+const TRASH_SPEED_MAX_MAX = 3.2;
 const BONUS_SPAWN_CHANCE = 0.16;
 const TRASH_POINTS = 10;
 const BONUS_POINTS = 25;
@@ -16,6 +20,8 @@ const livesValue = document.querySelector('.lives-value');
 const messageEl = document.getElementById('game-message');
 const leftBtn = document.getElementById('left-btn');
 const rightBtn = document.getElementById('right-btn');
+const startBtn = document.getElementById('start-btn');
+const pauseBtn = document.getElementById('pause-btn');
 const restartBtn = document.getElementById('restart-btn');
 
 let gameState = {
@@ -24,6 +30,8 @@ let gameState = {
     playerColumn: 1,
     gameOver: false,
     paused: false,
+    started: false,
+    userPaused: false,
 };
 
 let trashObjects = [];
@@ -38,7 +46,7 @@ function createColumns() {
         column.dataset.col = index;
         column.innerHTML = `<img class="window-image" src="game/window.PNG" alt="Window">`;
         column.addEventListener('click', () => {
-            if (!gameState.gameOver && !gameState.paused) {
+            if (gameState.started && !gameState.gameOver && !gameState.paused && !gameState.userPaused) {
                 setPlayerColumn(index);
             }
         });
@@ -70,21 +78,68 @@ function updateHud() {
     livesValue.textContent = gameState.lives;
 }
 
+function updateControlButtons() {
+    const canPlay = gameState.started && !gameState.gameOver && !gameState.paused && !gameState.userPaused;
+
+    leftBtn.disabled = !canPlay;
+    rightBtn.disabled = !canPlay;
+    pauseBtn.disabled = !gameState.started || gameState.gameOver;
+    pauseBtn.textContent = gameState.userPaused ? 'Resume' : 'Pause';
+    startBtn.textContent = gameState.gameOver || !gameState.started ? 'Start' : 'Restart';
+}
+
+function getDifficultyLevel() {
+    return Math.floor(gameState.score / DIFFICULTY_STEP_POINTS);
+}
+
+function getSpawnDelay() {
+    const difficultyLevel = getDifficultyLevel();
+    const baseDelay = Math.max(SPAWN_INTERVAL_MIN, SPAWN_INTERVAL - difficultyLevel * 75);
+    const jitter = Math.random() * 90 - 45;
+    return Math.max(360, baseDelay + jitter);
+}
+
+function getTrashSpeedRange() {
+    const difficultyLevel = getDifficultyLevel();
+    const progress = Math.min(1, difficultyLevel / 8);
+
+    return {
+        min: TRASH_SPEED_MIN + progress * 0.7,
+        max: TRASH_SPEED_MAX + progress * 0.8,
+    };
+}
+
+function scheduleNextSpawn() {
+    if (!gameState.started || gameState.gameOver || gameState.paused || gameState.userPaused) {
+        return;
+    }
+
+    clearTimeout(spawnTimer);
+    spawnTimer = window.setTimeout(() => {
+        if (!gameState.gameOver && !gameState.paused) {
+            createSpawnItem();
+        }
+        scheduleNextSpawn();
+    }, getSpawnDelay());
+}
+
 function createSpawnItem() {
-    if (gameState.gameOver || gameState.paused) {
+    if (!gameState.started || gameState.gameOver || gameState.paused || gameState.userPaused) {
         return;
     }
 
     const column = Math.floor(Math.random() * TOTAL_COLUMNS);
     const isBonus = Math.random() < BONUS_SPAWN_CHANCE;
+    const speedRange = getTrashSpeedRange();
     const item = document.createElement('img');
     item.src = isBonus ? 'img/water-can-transparent.png' : 'game/trash.PNG';
     item.className = isBonus ? 'trash can' : 'trash';
     item.dataset.column = column;
     item.dataset.type = isBonus ? 'can' : 'trash';
     item.dataset.y = '0';
-    item.dataset.speed = (TRASH_SPEED_MIN + Math.random() * (TRASH_SPEED_MAX - TRASH_SPEED_MIN)).toString();
+    item.dataset.speed = (speedRange.min + Math.random() * (speedRange.max - speedRange.min)).toString();
     item.style.left = `calc(${column * (100 / TOTAL_COLUMNS)}% + ${100 / TOTAL_COLUMNS / 2}%)`;
+    item.style.top = '0px';
     item.style.transform = 'translateX(-50%)';
     trashLayer.appendChild(item);
 
@@ -118,6 +173,12 @@ function missTrash(trash) {
         return;
     }
 
+    if (trash.type === 'can') {
+        gameState.score += BONUS_POINTS;
+        updateHud();
+        return;
+    }
+
     gameState.lives -= 1;
     updateHud();
 
@@ -135,16 +196,16 @@ function pauseRound(message) {
 
     gameState.paused = true;
     messageEl.textContent = message;
-    clearInterval(spawnTimer);
+    clearTimeout(spawnTimer);
     cleanupTrash();
 
-    setTimeout(() => {
+    window.setTimeout(() => {
         if (gameState.gameOver) {
             return;
         }
         gameState.paused = false;
         messageEl.textContent = 'Move the player to catch trash before it lands in the pond.';
-        spawnTimer = window.setInterval(createSpawnItem, SPAWN_INTERVAL);
+        scheduleNextSpawn();
     }, 1300);
 }
 
@@ -155,18 +216,22 @@ function cleanupTrash() {
 
 function endGame() {
     gameState.gameOver = true;
-    clearInterval(spawnTimer);
+    clearTimeout(spawnTimer);
+    cleanupTrash();
     messageEl.textContent = 'Game over! Tap Restart to play again.';
     restartBtn.classList.remove('hidden');
 }
 
 function restartGame() {
+    clearTimeout(spawnTimer);
     gameState = {
         score: 0,
         lives: MAX_LIVES,
         playerColumn: 1,
         gameOver: false,
         paused: false,
+        started: true,
+        userPaused: false,
     };
     cleanupTrash();
     updateHud();
@@ -174,28 +239,59 @@ function restartGame() {
     highlightActiveColumn();
     messageEl.textContent = 'Move the player to catch trash before it lands in the pond.';
     restartBtn.classList.add('hidden');
-    spawnTimer = window.setInterval(createSpawnItem, SPAWN_INTERVAL);
+    updateControlButtons();
+    scheduleNextSpawn();
+}
+
+function isCollidingWithPlayer(trash) {
+    const playerRect = playerEl.getBoundingClientRect();
+    const trashRect = trash.element.getBoundingClientRect();
+
+    return trashRect.left < playerRect.right
+        && trashRect.right > playerRect.left
+        && trashRect.top < playerRect.bottom
+        && trashRect.bottom > playerRect.top;
+}
+
+function togglePause() {
+    if (!gameState.started || gameState.gameOver) {
+        return;
+    }
+
+    gameState.userPaused = !gameState.userPaused;
+
+    if (gameState.userPaused) {
+        clearTimeout(spawnTimer);
+        gameState.paused = true;
+        messageEl.textContent = 'Paused. Press Pause to continue.';
+    } else {
+        gameState.paused = false;
+        messageEl.textContent = 'Move the player to catch trash before it lands in the pond.';
+        scheduleNextSpawn();
+    }
+
+    updateControlButtons();
 }
 
 function gameLoop() {
+    if (!gameState.started || gameState.gameOver || gameState.paused || gameState.userPaused) {
+        animationFrame = window.requestAnimationFrame(gameLoop);
+        return;
+    }
+
     const areaHeight = gameArea.clientHeight;
-    const pondHeight = gameArea.querySelector('.pond-wrapper').clientHeight;
-    const catchThreshold = areaHeight - pondHeight - 48;
     const missThreshold = areaHeight - 8;
 
     trashObjects.slice().forEach((trash) => {
         trash.y += trash.speed;
         trash.element.style.top = `${trash.y}px`;
 
-        const reachedCatch = trash.y >= catchThreshold;
-        const reachedMiss = trash.y >= missThreshold;
-
-        if (reachedCatch) {
-            if (trash.column === gameState.playerColumn) {
-                catchTrash(trash);
-                return;
-            }
+        if (isCollidingWithPlayer(trash)) {
+            catchTrash(trash);
+            return;
         }
+
+        const reachedMiss = trash.y >= missThreshold;
 
         if (reachedMiss) {
             missTrash(trash);
@@ -206,12 +302,21 @@ function gameLoop() {
 }
 
 function bindControls() {
+    startBtn.addEventListener('click', () => {
+        if (gameState.userPaused) {
+            togglePause();
+            return;
+        }
+        restartGame();
+    });
+
+    pauseBtn.addEventListener('click', togglePause);
     leftBtn.addEventListener('click', () => setPlayerColumn(gameState.playerColumn - 1));
     rightBtn.addEventListener('click', () => setPlayerColumn(gameState.playerColumn + 1));
     restartBtn.addEventListener('click', restartGame);
 
     window.addEventListener('keydown', (event) => {
-        if (gameState.gameOver || gameState.paused) {
+        if (gameState.gameOver || gameState.paused || gameState.userPaused || !gameState.started) {
             return;
         }
 
@@ -229,7 +334,8 @@ function initGame() {
     updatePlayerPosition();
     highlightActiveColumn();
     updateHud();
-    spawnTimer = window.setInterval(createSpawnItem, SPAWN_INTERVAL);
+    updateControlButtons();
+    messageEl.textContent = 'Press Start to begin catching trash.';
     animationFrame = window.requestAnimationFrame(gameLoop);
 }
 

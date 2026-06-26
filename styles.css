@@ -184,6 +184,13 @@ header p {
     box-shadow: 0 14px 20px rgba(46, 157, 247, 0.35);
 }
 
+.control-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
 .control-button.hidden {
     display: none;
 }
