@@ -7,7 +7,39 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome to the Charity Water Game Prototype</h1>
+    <div class="page-shell">
+        <header>
+            <h1>Catch the Trash</h1>
+            <p>Move between the window columns to catch trash before it lands in the pond.</p>
+        </header>
+
+        <section class="game-shell">
+            <div class="game-info">
+                <div class="score">Score: <span class="score-value">0</span></div>
+                <div class="lives">Lives: <span class="lives-value">3</span></div>
+            </div>
+
+            <div class="game-area" id="game-area">
+                <div class="columns" id="columns"></div>
+                <div class="trash-layer" id="trash-layer"></div>
+                <div class="player" id="player"></div>
+                <div class="pond-wrapper">
+                    <img src="game/pond.PNG" alt="Pond" class="pond-image">
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="left-btn" class="control-button">←</button>
+                <button id="right-btn" class="control-button">→</button>
+                <button id="restart-btn" class="control-button hidden">Restart</button>
+            </div>
+
+            <div class="game-message" id="game-message">
+                Move the player to catch trash before it lands in the pond.
+            </div>
+        </section>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

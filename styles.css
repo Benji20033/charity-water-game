@@ -1,15 +1,235 @@
-/* Charity: water Brand Colors
+/* Charity: water game styles */
 
-Primary Colors:
-- Yellow:     #FFC907
-- Blue:       #2E9DF7
+:root {
+    --surface: #f6fbff;
+    --text: #10273f;
+    --text-soft: #3c5a7d;
+    --accent: #2e9df7;
+    --accent-strong: #159a48;
+    --danger: #f5402c;
+    --shadow: rgba(16, 39, 63, 0.16);
+}
 
-Secondary Colors:
-- Light Blue: #8BD1CB
-- Green:      #4FCB53
-- Orange:     #FF902A
-- Red:        #F5402C
-- Dark Green: #159A48
-- Pink:       #F16061
+* {
+    box-sizing: border-box;
+}
 
-*/
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #e7f7ff 0%, #d6eef9 55%, #c4e5f3 100%);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+}
+
+.page-shell {
+    width: min(980px, 100%);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 18px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+}
+
+header p {
+    color: var(--text-soft);
+    margin: 8px auto 0;
+    max-width: 700px;
+    line-height: 1.5;
+}
+
+.game-shell {
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: 0 18px 30px var(--shadow);
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.game-info div {
+    background: #ffffff;
+    border: 1px solid #d8e6f2;
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-weight: 700;
+    min-width: 120px;
+    text-align: center;
+}
+
+.game-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 24px;
+    overflow: hidden;
+    background: center / cover no-repeat url("game/game background.PNG");
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.column {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.window-image {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 160px;
+    background: transparent;
+    pointer-events: none;
+}
+
+.trash-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.trash {
+    position: absolute;
+    width: 46px;
+    max-width: 12%;
+    pointer-events: none;
+}
+
+.trash.can {
+    width: 56px;
+    max-width: 14%;
+}
+
+.player {
+    position: absolute;
+    bottom: 110px;
+    width: 12.5%;
+    min-width: 56px;
+    height: 78px;
+    background: url("game/player.PNG") center / contain no-repeat;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.pond-wrapper {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 92%;
+    max-width: 900px;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.pond-image {
+    width: 100%;
+    display: block;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.control-button {
+    border: none;
+    background: linear-gradient(180deg, #2e9df7 0%, #159a48 100%);
+    color: white;
+    font-size: 1.2rem;
+    padding: 16px 24px;
+    border-radius: 16px;
+    box-shadow: 0 10px 16px rgba(46, 157, 247, 0.3);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.control-button:hover,
+.control-button:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 20px rgba(46, 157, 247, 0.35);
+}
+
+.control-button.hidden {
+    display: none;
+}
+
+.game-message {
+    margin-top: 14px;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 1rem;
+    min-height: 1.4rem;
+}
+
+@media (max-width: 720px) {
+    .game-area {
+        aspect-ratio: 9 / 16;
+    }
+
+    .player {
+        bottom: 100px;
+        width: 16%;
+    }
+
+    .control-button {
+        flex: 1 1 46%;
+        min-width: 140px;
+    }
+
+    .game-info {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 520px) {
+    body {
+        padding: 12px;
+    }
+
+    .game-area {
+        border-radius: 18px;
+    }
+
+    .player {
+        bottom: 88px;
+        width: 18%;
+    }
+
+    .control-button {
+        font-size: 1rem;
+        padding: 14px 18px;
+    }
+}
