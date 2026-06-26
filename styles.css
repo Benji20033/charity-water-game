@@ -98,6 +98,9 @@ header p {
     align-items: flex-start;
     pointer-events: auto;
     cursor: pointer;
+    border: none;
+    background: transparent;
+    outline: none;
 }
 
 .window-image {
